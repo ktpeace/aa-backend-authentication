@@ -585,13 +585,15 @@ This function will be used in the login and signup routes later.
 
 Certain authenticated routes will require the identity of the current session
 user. You will create and utilize a middleware function called restoreUser that
-will restore the session user based on the contents of the JWT cookie. Create a
-middleware function that will verify and parse the JWT's payload and search the
-database for a `User` with the id in the payload. (This query should use the
-`currentUser` scope since the `hashedPassword` is not needed for this
+will restore the session user based on the contents of the JWT cookie.
+
+Create a middleware function that will verify and parse the JWT's payload and
+search the database for a `User` with the id in the payload. (This query should
+use the `currentUser` scope since the `hashedPassword` is not needed for this
 operation.) If there is a `User` found, then save the user to a key of `user`
-onto the request. If there is an error verifying the JWT or a `User` cannot be
-found with the `id`, then clear the `token` cookie from the response.
+onto the Request, `req.user`. If there is an error verifying the JWT or a `User`
+cannot be found with the `id`, then clear the `token` cookie from the
+response and set `req.user` to `null`.
 
 ```js
 // backend/utils/auth.js
@@ -600,6 +602,7 @@ found with the `id`, then clear the `token` cookie from the response.
 const restoreUser = (req, res, next) => {
   // token parsed from cookies
   const { token } = req.cookies;
+  req.user = null;
 
   return jwt.verify(token, secret, null, async (err, jwtPayload) => {
     if (err) {
@@ -621,8 +624,8 @@ const restoreUser = (req, res, next) => {
 };
 ```
 
-This will be added as a pre-middleware for route handlers and for the following
-authentication middleware.
+The `restoreUser` middleware will be connected to the API router so that all API
+route handlers will check if there is a current user logged in or not.
 
 ### `requireAuth`
 
@@ -642,22 +645,19 @@ and passed along to the error-handling middlewares.
 // ...
 
 // If there is no current user, return an error
-const requireAuth = [
-  restoreUser,
-  function (req, _res, next) {
-    if (req.user) return next();
+const requireAuth = function (req, _res, next) {
+  if (req.user) return next();
 
-    const err = new Error('Unauthorized');
-    err.title = 'Unauthorized';
-    err.errors = ['Unauthorized'];
-    err.status = 401;
-    return next(err);
-  }
-];
+  const err = new Error('Unauthorized');
+  err.title = 'Unauthorized';
+  err.errors = ['Unauthorized'];
+  err.status = 401;
+  return next(err);
+}
 ```
 
-Both restoreUser and requireAuth will be applied as a pre-middleware to route
-handlers where needed.
+`requireAuth` will be connected directly to route handlers where there needs to
+be a current user logged in for the actions in those route handlers.
 
 Finally, export all the functions at the bottom of the file.
 
@@ -702,9 +702,12 @@ cookie set in your browser's DevTools. If there isn't, then check your backend
 server logs in the terminal where you ran `npm start`. Also, check the syntax
 of your `setTokenCookie` function as well as the test route.
 
+Import the `restoreUser` middleware and connect it to the router before any
+other middleware or route handlers are connected to the router.
+
 Next, add a test route in your `backend/routes/api/index.js` file that will test
-the `restoreUser` middleware by connecting the middleware and checking whether
-or not the `req.user` key has been populated by the middleware properly.
+the `restoreUser` middleware and check whether or not the `req.user` key has
+been populated by the middleware properly.
 
 ```js
 // backend/routes/api/index.js
@@ -712,9 +715,11 @@ or not the `req.user` key has been populated by the middleware properly.
 
 // GET /api/restore-user
 const { restoreUser } = require('../../utils/auth.js');
+
+router.use(restoreUser);
+
 router.get(
   '/restore-user',
-  restoreUser,
   (req, res) => {
     return res.json(req.user);
   }
@@ -740,6 +745,10 @@ return an error. Otherwise it will return the session user's information.
 
 ```js
 // backend/routes/api/index.js
+// ...
+
+router.use(restoreUser);
+
 // ...
 
 // GET /api/require-auth
@@ -772,6 +781,28 @@ again: [http://localhost:8000/api/set-token-cookie].
 
 **Once you are satisfied with the test results, you can remove all code for
 testing the user auth middleware routes.**
+
+**Make sure to keep the `restoreUser` middleware connected before any other
+middleware or route handlers are connected to the router.** This will allow
+all route handlers connected to this router to retrieve the current user on the
+Request object as `req.user`. If there is a valid current user session, then
+`req.user` will be set to the `User` in the database. If there is NO valid
+current user session, then `req.user` will be set to `null`.
+
+Your `backend/routes/api/index.js` should look something like this:
+
+```js
+// backend/routes/api/index.js
+const router = require("express").Router();
+const { restoreUser } = require("../../utils/auth.js");
+
+// Connect restoreUser middleware to the API router
+  // If current user session is valid, set req.user to the user in the database
+  // If current user session is not valid, set req.user to null
+router.use(restoreUser);
+
+module.exports = router;
+```
 
 [helmet on the `npm` registry]: https://www.npmjs.com/package/helmet
 [Express error-handling middleware]: https://expressjs.com/en/guide/using-middleware.html#middleware.error-handling

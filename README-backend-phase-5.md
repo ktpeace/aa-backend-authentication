@@ -306,7 +306,7 @@ the `validateSignup` middleware.
 
 Commit your code once you're done testing!
 
-# Wrapping up the Backend
+## Wrapping up the Backend
 
 **Do not remove the `POST /api/test` route just yet. You will be using it in the
 next part.**

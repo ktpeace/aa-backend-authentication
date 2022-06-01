@@ -50,12 +50,12 @@ running `npm init -y`.
 - `jsonwebtoken` - JWT
 - `morgan` - logging information about server requests/responses
 - `per-env` - use environment variables for starting app differently
-- `sqlite3` - PostgresQL greater or equal to version 8.4.1
 - `sequelize@6` - Sequelize
 - `sequelize-cli@6` - use `sequelize` in the command line
 
 `npm install -D` the following packages as dev-dependencies:
 
+- `sqlite3` - SQLite3
 - `dotenv-cli` - use `dotenv` in the command line
 - `nodemon` - hot reload server `backend` files
 
@@ -161,7 +161,11 @@ from the `.env` file into the `config/index.js`.
 
 Notice how the `production` database configuration has different keys than the
 `development` configuration? When you deploy your application to production,
-your database will be read from a URL path instead of a local database file.
+your database will be read from a URL path instead of a local database file. You
+will also be using PostgresQL in production rather than SQLite3 as a SQL
+database management system. Recall that SQLite3 is supposed to be used
+**ONLY in development**. PostgresQL is a production-level database management
+system.
 
 Finally, migrate the database using `sequelize-cli` to make sure you set
 everything up correctly.

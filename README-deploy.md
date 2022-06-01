@@ -22,9 +22,19 @@ server.
 If you haven't created a Heroku account yet, create one [here][Create Heroku
 Account].
 
-Add a new application in your [Heroku dashboard] named whatever you want. Under
-the "Resources" tab in your new application, click "Find more add-ons" and add
-the "Heroku Postgres" add-on with the free Hobby Dev setting.
+Add a new application in your [Heroku dashboard] named whatever you want.
+
+Recall that you are supposed to use SQLite3 as a SQL database management
+system **ONLY in development**. A Heroku add-on will allow you to use
+PostgresQL instead, which is a SQL database management system that is commonly
+used for both in development **AND in production**. Under the "Resources" tab in
+your new application, click "Find more add-ons" and add the "Heroku Postgres"
+add-on with the free Hobby Dev setting. Your app can connect and use the
+PostgresQL database given by Heroku using the `DATABASE_URL` environment
+variable that the Heroku Postgres add-on sets automatically for you. (You can
+see how your application configures Sequelize to use PostgresQL and the
+`DATABASE_URL` in production by examining the `backend/config/database.js`
+file.)
 
 In your terminal, install the [Heroku CLI]; for WSL users, see "Standalone
 Installation" Instructions. Afterwards, login to Heroku in your
@@ -38,13 +48,15 @@ Add Heroku as a remote to your project's git repository in the following command
 and replace `<name-of-Heroku-app>` with the name of the application you created
 in the [Heroku dashboard].
 
-```js
+```bash
 heroku git:remote -a <name-of-Heroku-app>
 ```
 
 Next, you will set up your Express application to be deployable to Heroku.
 
 ## Phase 2: Setting up your Express application
+
+Run `npm install pg` to install PostgresQL as a dependency.
 
 Your Express backend's `package.json` should include scripts to run the
 `sequelize` CLI commands.
@@ -110,21 +122,21 @@ environment variables you need for production.
 You can also set environment variables through the Heroku CLI you installed
 earlier in your terminal. See the docs for [Setting Heroku Config Variables].
 
-Push your project to Heroku. Heroku only allows the `master` branch to be
-pushed. But, you can alias your branch to be named `master` when pushing to
-Heroku. For example, to push a branch called `login-branch` to `master` run:
+Push your project to Heroku. Heroku only allows the `main` branch to be
+pushed. But, you can alias your branch to be named `main` when pushing to
+Heroku. For example, to push a branch called `login-branch` to `main` run:
 
 ```bash
-git push heroku login-branch:master
+git push heroku login-branch:main
 ```
 
-If you do want to push the `master` branch, just run:
+If you do want to push the `main` branch, just run:
 
 ```bash
-git push heroku master
+git push heroku main
 ```
 
-You may want to make two applications on Heroku, the `master` branch site that
+You may want to make two applications on Heroku, the `main` branch site that
 should have working code only. And your `staging` site that you can use to test
 your work in progress code.
 
