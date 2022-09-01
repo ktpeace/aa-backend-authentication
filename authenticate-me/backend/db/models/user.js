@@ -1,9 +1,9 @@
 const bcrypt = require('bcryptjs');
 
 'use strict';
-const {
-  Model
-} = require('sequelize');
+const { Model } = require('sequelize');
+const validator = require('validator');
+
 module.exports = (sequelize, DataTypes) => {
   class User extends Model {
     /**
@@ -40,15 +40,20 @@ module.exports = (sequelize, DataTypes) => {
     }
 
     static async signup({ username, email, password }) {
-      const hashedPassword = bcrypt.hashSync('password');
-      const newUser = await User.create({username, email, hashedPassword});
-      return await User.scope('currentUser').findByPk(newUser.id);
+      const hashedPassword = bcrypt.hashSync(password);
+      const user = await User.create({
+        username,
+        email,
+        hashedPassword
+      });
+      return await User.scope('currentUser').findByPk(user.id);
     }
 
     static associate(models) {
       // define association here
     }
   }
+
   User.init({
     username: {
       type: DataTypes.STRING,
@@ -57,10 +62,10 @@ module.exports = (sequelize, DataTypes) => {
       validate: {
         len: [4, 30],
         isNotEmail(value) {
-          if (validator.isEmail(value)) {
-            throw new Error('Username cannot be an email.');
+            if (validator.isEmail(value)) {
+              throw new Error("Cannot be an email.");
+            }
           }
-        }
       }
     },
     email: {
@@ -70,7 +75,7 @@ module.exports = (sequelize, DataTypes) => {
       validate: {
         len: [3, 256],
         isEmail: {msg: 'valid email format required'}
-      },
+      }
     },
     hashedPassword: {
       type: DataTypes.STRING.BINARY,
